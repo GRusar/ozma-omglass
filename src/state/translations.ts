@@ -8,7 +8,6 @@ import Vue from 'vue'
 
 import { IRef, waitTimeout } from '@/utils'
 import { ozmaSchema } from '@/api'
-import { CancelledError } from '@/modules'
 
 const userString = z.union([z.string(), z.record(z.string(), z.string())])
 
@@ -25,6 +24,30 @@ export interface IMessageString {
 }
 
 export type UserString = string | ITranslatedString | IMessageString
+
+export const isUserString = (us: unknown): us is UserString => {
+  if (typeof us === 'string') {
+    return true
+  }
+  if (typeof us === 'object' && us !== null) {
+    if ('default' in us && 'strings' in us) {
+      return true
+    }
+    if ('schema' in us && 'message' in us) {
+      return true
+    }
+  }
+  return false
+}
+
+export const isOptionalUserString = (
+  us: unknown,
+): us is UserString | undefined => {
+  if (us === undefined) {
+    return true
+  }
+  return isUserString(us)
+}
 
 const errorKey = 'translations'
 
@@ -85,7 +108,7 @@ const translationsModule: Module<ITranslationsState, {}> = {
           )) as IViewExprResult
 
           if (state.pending !== pending.ref) {
-            throw new CancelledError()
+            return state.pending!
           }
 
           const schemaColumnIndex = res.info.columns.findIndex(

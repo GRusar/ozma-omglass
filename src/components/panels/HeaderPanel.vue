@@ -107,13 +107,14 @@
 import { Component, Vue, Prop } from 'vue-property-decorator'
 import Popper from 'vue-popperjs'
 
+import { debounceTillAnimationFrame } from '@/utils'
 import type { IUserViewType } from '@/components/FormControl.vue'
 import ButtonItem from '@/components/buttons/ButtonItem.vue'
 import type { Button } from '@/components/buttons/buttons'
 import { buttonsToPanelButtons } from '@/components/buttons/buttons'
 import SearchPanel from '@/components/SearchPanel.vue'
 import { interfaceButtonVariant } from '@/utils_colors'
-import { UserString } from '@/state/translations'
+import { UserString, isOptionalUserString } from '@/state/translations'
 import ArgumentEditor, {
   IArgumentEditorProps,
 } from '@/components/ArgumentEditor.vue'
@@ -129,7 +130,7 @@ const isHelpButton = (button: Button) => button.icon === 'help_outline'
   },
 })
 export default class HeaderPanel extends Vue {
-  @Prop() title!: UserString | undefined
+  @Prop({ validator: isOptionalUserString }) title!: UserString | undefined
   @Prop({ type: Array, required: true }) buttons!: Button[]
   @Prop({ type: Boolean, required: true }) isEnableFilter!: boolean
   @Prop({ type: Object }) view!: IUserViewType | undefined
@@ -181,7 +182,9 @@ export default class HeaderPanel extends Vue {
   private mounted() {
     if (this.$refs['headerPanel']) {
       /* eslint-disable-next-line @typescript-eslint/unbound-method */
-      this.panelResizeObserver = new ResizeObserver(this.onPanelResize)
+      this.panelResizeObserver = new ResizeObserver(
+        debounceTillAnimationFrame(() => this.onPanelResize()),
+      )
       this.panelResizeObserver.observe(this.$refs['headerPanel'] as HTMLElement)
     }
   }
